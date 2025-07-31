@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/yourusername/yourrepo/main/assets/banner.png" alt="Data Structures in C" width="800"/>
+  <img src="https://repository-images.githubusercontent.com/354254077/bce9404a-5a1c-491c-b778-ee99c018b00e" width="800"/>
 </p>
 
 <h1 align="center">📘 Data Structures in C 🌐</h1>
