@@ -2,7 +2,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#define MAX_SIZE 150  
+#define MAX_SIZE 100
+
+// STACK for CHARACTERS
 
 char charStack[MAX_SIZE];
 int charTop = -1;
@@ -33,23 +35,25 @@ int isCharStackEmpty() {
 }
 
 
-int intStack[MAX_SIZE];
-int intTop = -1;
+// STACK for FLOATING-POINT NUMBERS
 
-void intPush(int value) {
-    if (intTop >= MAX_SIZE - 1) {
-        printf("Integer stack overflow\n");
+float floatStack[MAX_SIZE];
+int floatTop = -1;
+
+void floatPush(float value) {
+    if (floatTop >= MAX_SIZE - 1) {
+        printf("Float stack overflow\n");
         exit(1);
     }
-    intStack[++intTop] = value;
+    floatStack[++floatTop] = value;
 }
 
-int intPop() {
-    if (intTop == -1) {
-        printf("Integer stack underflow\n");
+float floatPop() {
+    if (floatTop == -1) {
+        printf("Float stack underflow\n");
         exit(1);
     }
-    return intStack[intTop--];
+    return floatStack[floatTop--];
 }
 
 
@@ -60,13 +64,14 @@ int precedence(char symbol) {
     else return 0;
 }
 
-int intPower(int base, int exp) {
-    int result = 1;
-    for (int i = 0; i < exp; i++)
-        result *= base;
+float floatPower(float base, float exp) {
+    float result = 1;
+    for (int i = 0; i < exp; i++) result *= base;
     return result;
 }
 
+
+// INFIX → POSTFIX
 
 void infixToPostfix(char infix[], char postfix[]) {
     int i = 0, j = 0;
@@ -74,37 +79,30 @@ void infixToPostfix(char infix[], char postfix[]) {
     while (infix[i] != '\0') {
         char c = infix[i];
 
-       
-        if (isdigit(c)) {
-            while (isdigit(infix[i])) {
+        if (isdigit(c)) { // read full number
+            while (isdigit(infix[i]) || infix[i] == '.') {
                 postfix[j++] = infix[i++];
             }
             postfix[j++] = ' ';
             continue;
-        }
-        
-        else if (isalpha(c)) {
+        } 
+        else if (isalpha(c)) { // variable (a,b,x,y…)
             postfix[j++] = c;
             postfix[j++] = ' ';
-        }
-       
+        } 
         else if (c == '(') {
             charPush(c);
-        }
-        
+        } 
         else if (c == ')') {
             while (!isCharStackEmpty() && charPeek() != '(') {
                 postfix[j++] = charPop();
                 postfix[j++] = ' ';
             }
-            if (!isCharStackEmpty()) charPop(); 
-        }
-       
-        else {
+            if (!isCharStackEmpty()) charPop(); // pop '('
+        } 
+        else { // operator
             while (!isCharStackEmpty() && precedence(charPeek()) >= precedence(c)) {
-    
-                if (precedence(charPeek()) == precedence(c) && c == '^')
-                    break;
+                if (precedence(charPeek()) == precedence(c) && c == '^') break;
                 postfix[j++] = charPop();
                 postfix[j++] = ' ';
             }
@@ -113,64 +111,72 @@ void infixToPostfix(char infix[], char postfix[]) {
         i++;
     }
 
-    
     while (!isCharStackEmpty()) {
         postfix[j++] = charPop();
         postfix[j++] = ' ';
     }
 
-    postfix[j] = '\0'; 
+    postfix[j] = '\0';
 }
 
 
-int evaluatePostfix(char postfix[]) {
+// POSTFIX EVALUATION (for floating-point numbers)
+
+float evaluatePostfix(char postfix[]) {
     int i = 0;
 
     while (postfix[i] != '\0') {
-        
-        if (isdigit(postfix[i])) {
-            int num = 0;
+        if (isdigit(postfix[i]) || postfix[i] == '.') {
+            float num = 0;
+            float decimalPlace = 1;
+
             while (isdigit(postfix[i])) {
                 num = num * 10 + (postfix[i] - '0');
                 i++;
             }
-            intPush(num);
-        }
-      
+            if (postfix[i] == '.') {
+                i++;
+                while (isdigit(postfix[i])) {
+                    num = num + (postfix[i] - '0') / (decimalPlace *= 10);
+                    i++;
+                }
+            }
+            floatPush(num);
+        } 
         else if (postfix[i] == ' ') {
             i++;
             continue;
-        }
-       
+        } 
         else if (isalpha(postfix[i])) {
             printf("Variable '%c' found → cannot evaluate without value.\n", postfix[i]);
             exit(1);
-        }
-        
+        } 
         else {
-            int val2 = intPop();
-            int val1 = intPop();
+            float val2 = floatPop();
+            float val1 = floatPop();
 
             switch (postfix[i]) {
-                case '+': intPush(val1 + val2); break;
-                case '-': intPush(val1 - val2); break;
-                case '*': intPush(val1 * val2); break;
+                case '+': floatPush(val1 + val2); break;
+                case '-': floatPush(val1 - val2); break;
+                case '*': floatPush(val1 * val2); break;
                 case '/':
                     if (val2 == 0) {
                         printf("Division by zero error\n");
                         exit(1);
                     }
-                    intPush(val1 / val2);
+                    floatPush(val1 / val2);
                     break;
-                case '^': intPush(intPower(val1, val2)); break;
+                case '^': floatPush(floatPower(val1, val2)); break;
             }
             i++;
         }
     }
 
-    return intPop();
+    return floatPop();
 }
 
+
+// MAIN
 
 int main() {
     char infix[MAX_SIZE], postfix[MAX_SIZE];
@@ -179,9 +185,9 @@ int main() {
     scanf("%[^\n]", infix);
 
     infixToPostfix(infix, postfix);
-    printf("Postfix Expression: %s\n", postfix);
+    printf("Postfix : %s\n", postfix);
 
-  
+    // Try evaluation only if there are no variables
     int hasVariable = 0;
     for (int k = 0; postfix[k] != '\0'; k++) {
         if (isalpha(postfix[k])) {
@@ -190,10 +196,9 @@ int main() {
         }
     }
 
- 
     if (!hasVariable) {
-        int result = evaluatePostfix(postfix);
-        printf("Result: %d\n", result);
+        float result = evaluatePostfix(postfix);
+        printf(" Result: %.2f\n", result);
     } else {
         printf("Expression contains variables → cannot evaluate .\n");
     }
